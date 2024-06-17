@@ -35,19 +35,20 @@ check_5_1() {
   fail=0
   no_apparmor_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     policy=$(podman inspect --format 'AppArmorProfile={{ .AppArmorProfile }}' "$c")
 
     if [ "$policy" = "AppArmorProfile=" ] || [ "$policy" = "AppArmorProfile=[]" ] || [ "$policy" = "AppArmorProfile=<no value>" ] || [ "$policy" = "AppArmorProfile=unconfined" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "     * No AppArmorProfile Found: $c"
-        no_apparmor_containers="$no_apparmor_containers $c"
+        warn "     * No AppArmorProfile Found: $cname"
+        no_apparmor_containers="$no_apparmor_containers $cname"
         fail=1
         continue
       fi
-      warn "     * No AppArmorProfile Found: $c"
-      no_apparmor_containers="$no_apparmor_containers $c"
+      warn "     * No AppArmorProfile Found: $cname"
+      no_apparmor_containers="$no_apparmor_containers $cname"
     fi
   done
   # We went through all the containers and found none without AppArmor
@@ -74,18 +75,19 @@ check_5_2() {
   fail=0
   no_securityoptions_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     policy=$(podman inspect --format 'SecurityOpt={{ .HostConfig.SecurityOpt }}' "$c")
     if [ "$policy" = "SecurityOpt=" ] || [ "$policy" = "SecurityOpt=[]" ] || [ "$policy" = "SecurityOpt=<no value>" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "     * No SecurityOptions Found: $c"
-        no_securityoptions_containers="$no_securityoptions_containers $c"
+        warn "     * No SecurityOptions Found: $cname"
+        no_securityoptions_containers="$no_securityoptions_containers $cname"
         fail=1
         continue
       fi
-      warn "     * No SecurityOptions Found: $c"
-      no_securityoptions_containers="$no_securityoptions_containers $c"
+      warn "     * No SecurityOptions Found: $cname"
+      no_securityoptions_containers="$no_securityoptions_containers $cname"
     fi
   done
   # We went through all the containers and found none without SELinux
@@ -112,6 +114,7 @@ check_5_3() {
   fail=0
   caps_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     container_caps=$(podman inspect --format 'CapAdd={{ .HostConfig.CapAdd}}' "$c")
     caps=$(echo "$container_caps" | tr "[:lower:]" "[:upper:]" | \
       sed 's/CAPADD/CapAdd/' | \
@@ -121,13 +124,13 @@ check_5_3() {
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "     * Capabilities added: $caps to $c"
-        caps_containers="$caps_containers $c"
+        warn "     * Capabilities added: $caps to $cname"
+        caps_containers="$caps_containers $cname"
         fail=1
         continue
       fi
-      warn "     * Capabilities added: $caps to $c"
-      caps_containers="$caps_containers $c"
+      warn "     * Capabilities added: $caps to $cname"
+      caps_containers="$caps_containers $cname"
     fi
   done
   # We went through all the containers and found none with extra capabilities
@@ -154,19 +157,20 @@ check_5_4() {
   fail=0
   privileged_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     privileged=$(podman inspect --format '{{ .HostConfig.Privileged }}' "$c")
 
     if [ "$privileged" = "true" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "     * Container running in Privileged mode: $c"
-        privileged_containers="$privileged_containers $c"
+        warn "     * Container running in Privileged mode: $cname"
+        privileged_containers="$privileged_containers $cname"
         fail=1
         continue
       fi
-      warn "     * Container running in Privileged mode: $c"
-      privileged_containers="$privileged_containers $c"
+      warn "     * Container running in Privileged mode: $cname"
+      privileged_containers="$privileged_containers $cname"
     fi
   done
   # We went through all the containers and found no privileged containers
@@ -203,6 +207,7 @@ check_5_5() {
   fail=0
   sensitive_mount_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     volumes=$(podman inspect --format '{{ .VolumesRW }}' "$c")
     [ -z "$volumes" ] && volumes=$(podman inspect --format '{{ .Mounts }}' "$c")
     # Go over each directory in sensitive dir and see if they exist in the volumes
@@ -215,13 +220,13 @@ check_5_5() {
         # If it's the first container, fail the test
         if [ $fail -eq 0 ]; then
           warn -s "$check"
-          warn "     * Sensitive directory $v mounted in: $c"
-          sensitive_mount_containers="$sensitive_mount_containers $c:$v"
+          warn "     * Sensitive directory $v mounted in: $cname"
+          sensitive_mount_containers="$sensitive_mount_containers $cname:$v"
           fail=1
           continue
         fi
-        warn "     * Sensitive directory $v mounted in: $c"
-        sensitive_mount_containers="$sensitive_mount_containers $c:$v"
+        warn "     * Sensitive directory $v mounted in: $cname"
+        sensitive_mount_containers="$sensitive_mount_containers $cname:$v"
       fi
     done
   done
@@ -250,19 +255,19 @@ check_5_6() {
   ssh_exec_containers=""
   printcheck=0
   for c in $containers; do
-
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     processes=$(podman exec "$c" ps -el 2>/dev/null | grep -c sshd | awk '{print $1}')
     if [ "$processes" -ge 1 ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "     * Container running sshd: $c"
-        ssh_exec_containers="$ssh_exec_containers $c"
+        warn "     * Container running sshd: $cname"
+        ssh_exec_containers="$ssh_exec_containers $cname"
         fail=1
         printcheck=1
       else
-        warn "     * Container running sshd: $c"
-        ssh_exec_containers="$ssh_exec_containers $c"
+        warn "     * Container running sshd: $cname"
+        ssh_exec_containers="$ssh_exec_containers $cname"
       fi
     fi
 
@@ -272,8 +277,8 @@ check_5_6() {
           warn -s "$check"
           printcheck=1
         fi
-      warn "     * Podman exec fails: $c"
-      ssh_exec_containers="$ssh_exec_containers $c"
+      warn "     * Podman exec fails: $cname"
+      ssh_exec_containers="$ssh_exec_containers $cname"
       fail=1
     fi
 
@@ -302,6 +307,7 @@ check_5_7() {
   fail=0
   privileged_port_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     # Port format is private port -> ip: public port
     ports=$(podman port "$c" | awk '{print $0}' | cut -d ':' -f2)
 
@@ -311,13 +317,13 @@ check_5_7() {
         # If it's the first container, fail the test
         if [ $fail -eq 0 ]; then
           warn -s "$check"
-          warn "     * Privileged Port in use: $port in $c"
-          privileged_port_containers="$privileged_port_containers $c:$port"
+          warn "     * Privileged Port in use: $port in $cname"
+          privileged_port_containers="$privileged_port_containers $cname:$port"
           fail=1
           continue
         fi
-        warn "     * Privileged Port in use: $port in $c"
-        privileged_port_containers="$privileged_port_containers $c:$port"
+        warn "     * Privileged Port in use: $port in $cname"
+        privileged_port_containers="$privileged_port_containers $cname:$port"
       fi
     done
   done
@@ -351,6 +357,7 @@ check_5_8() {
   fail=0
   id_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     rawPorts=$(podman inspect "$c" --format '{{ .NetworkSettings.Ports }}')
     for rawport in ${rawPorts}; do
       not_allowed_found="0"
@@ -364,8 +371,8 @@ check_5_8() {
           fail=1
           info -c "$check"
         fi
-        warn "      * Not allowed port found: $c"
-        id_containers="$id_containers $c/$not_allowed_found"
+        warn "      * Not allowed port found: $cname"
+        id_containers="$id_containers $cname/$not_allowed_found"
       fi
     done
   done
@@ -393,19 +400,20 @@ check_5_9() {
   fail=0
   net_host_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     mode=$(podman inspect --format 'NetworkMode={{ .HostConfig.NetworkMode }}' "$c")
 
     if [ "$mode" = "NetworkMode=host" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "     * Container running with networking mode 'host': $c"
-        net_host_containers="$net_host_containers $c"
+        warn "     * Container running with networking mode 'host': $cname"
+        net_host_containers="$net_host_containers $cname"
         fail=1
         continue
       fi
-      warn "     * Container running with networking mode 'host': $c"
-      net_host_containers="$net_host_containers $c"
+      warn "     * Container running with networking mode 'host': $cname"
+      net_host_containers="$net_host_containers $cname"
     fi
   done
   # We went through all the containers and found no Network Mode host
@@ -432,6 +440,7 @@ check_5_10() {
   fail=0
   mem_unlimited_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     memory=$(podman inspect --format '{{ .HostConfig.Memory }}' "$c")
     if podman inspect --format '{{ .Config.Memory }}' "$c" 2> /dev/null 1>&2; then
       memory=$(podman inspect --format '{{ .Config.Memory }}' "$c")
@@ -441,13 +450,13 @@ check_5_10() {
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Container running without memory restrictions: $c"
-        mem_unlimited_containers="$mem_unlimited_containers $c"
+        warn "      * Container running without memory restrictions: $cname"
+        mem_unlimited_containers="$mem_unlimited_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Container running without memory restrictions: $c"
-      mem_unlimited_containers="$mem_unlimited_containers $c"
+      warn "      * Container running without memory restrictions: $cname"
+      mem_unlimited_containers="$mem_unlimited_containers $cname"
     fi
   done
   # We went through all the containers and found no lack of Memory restrictions
@@ -474,6 +483,7 @@ check_5_11() {
   fail=0
   cpu_unlimited_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     shares=$(podman inspect --format '{{ .HostConfig.CpuShares }}' "$c")
     if podman inspect --format '{{ .Config.CpuShares }}' "$c" 2> /dev/null 1>&2; then
       shares=$(podman inspect --format '{{ .Config.CpuShares }}' "$c")
@@ -483,13 +493,13 @@ check_5_11() {
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Container running without CPU restrictions: $c"
-        cpu_unlimited_containers="$cpu_unlimited_containers $c"
+        warn "      * Container running without CPU restrictions: $cname"
+        cpu_unlimited_containers="$cpu_unlimited_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Container running without CPU restrictions: $c"
-      cpu_unlimited_containers="$cpu_unlimited_containers $c"
+      warn "      * Container running without CPU restrictions: $cname"
+      cpu_unlimited_containers="$cpu_unlimited_containers $cname"
     fi
   done
   # We went through all the containers and found no lack of CPUShare restrictions
@@ -516,19 +526,20 @@ check_5_12() {
   fail=0
   fsroot_mount_containers=""
   for c in $containers; do
-   read_status=$(podman inspect --format '{{ .HostConfig.ReadonlyRootfs }}' "$c")
+    cname=$(podman inspect --format='{{.Name}}' "$c")
+    read_status=$(podman inspect --format '{{ .HostConfig.ReadonlyRootfs }}' "$c")
 
     if [ "$read_status" = "false" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Container running with root FS mounted R/W: $c"
-        fsroot_mount_containers="$fsroot_mount_containers $c"
+        warn "      * Container running with root FS mounted R/W: $cname"
+        fsroot_mount_containers="$fsroot_mount_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Container running with root FS mounted R/W: $c"
-      fsroot_mount_containers="$fsroot_mount_containers $c"
+      warn "      * Container running with root FS mounted R/W: $cname"
+      fsroot_mount_containers="$fsroot_mount_containers $cname"
     fi
   done
   # We went through all the containers and found no R/W FS mounts
@@ -555,18 +566,19 @@ check_5_13() {
   fail=0
   incoming_unbound_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     for ip in $(podman port "$c" | awk '{print $3}' | cut -d ':' -f1); do
       if [ "$ip" = "0.0.0.0" ]; then
         # If it's the first container, fail the test
         if [ $fail -eq 0 ]; then
           warn -s "$check"
-          warn "      * Port being bound to wildcard IP: $ip in $c"
-          incoming_unbound_containers="$incoming_unbound_containers $c:$ip"
+          warn "      * Port being bound to wildcard IP: $ip in $cname"
+          incoming_unbound_containers="$incoming_unbound_containers $cname:$ip"
           fail=1
           continue
         fi
-        warn "      * Port being bound to wildcard IP: $ip in $c"
-        incoming_unbound_containers="$incoming_unbound_containers $c:$ip"
+        warn "      * Port being bound to wildcard IP: $ip in $cname"
+        incoming_unbound_containers="$incoming_unbound_containers $cname:$ip"
       fi
     done
   done
@@ -594,19 +606,20 @@ check_5_14() {
   fail=0
   maxretry_unset_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     policy=$(podman inspect --format MaximumRetryCount='{{ .HostConfig.RestartPolicy.MaximumRetryCount }}' "$c")
 
     if [ "$policy" != "MaximumRetryCount=5" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * MaximumRetryCount is not set to 5: $c"
-        maxretry_unset_containers="$maxretry_unset_containers $c"
+        warn "      * MaximumRetryCount is not set to 5: $cname"
+        maxretry_unset_containers="$maxretry_unset_containers $cname"
         fail=1
         continue
       fi
-      warn "      * MaximumRetryCount is not set to 5: $c"
-      maxretry_unset_containers="$maxretry_unset_containers $c"
+      warn "      * MaximumRetryCount is not set to 5: $cname"
+      maxretry_unset_containers="$maxretry_unset_containers $cname"
     fi
   done
   # We went through all the containers and they all had MaximumRetryCount=5
@@ -633,19 +646,20 @@ check_5_15() {
   fail=0
   pidns_shared_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     mode=$(podman inspect --format 'PidMode={{.HostConfig.PidMode }}' "$c")
 
     if [ "$mode" = "PidMode=host" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Host PID namespace being shared with: $c"
-        pidns_shared_containers="$pidns_shared_containers $c"
+        warn "      * Host PID namespace being shared with: $cname"
+        pidns_shared_containers="$pidns_shared_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Host PID namespace being shared with: $c"
-      pidns_shared_containers="$pidns_shared_containers $c"
+      warn "      * Host PID namespace being shared with: $cname"
+      pidns_shared_containers="$pidns_shared_containers $cname"
     fi
   done
   # We went through all the containers and found none with PidMode as host
@@ -672,19 +686,20 @@ check_5_16() {
   fail=0
   ipcns_shared_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     mode=$(podman inspect --format 'IpcMode={{.HostConfig.IpcMode }}' "$c")
 
     if [ "$mode" = "IpcMode=host" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Host IPC namespace being shared with: $c"
-        ipcns_shared_containers="$ipcns_shared_containers $c"
+        warn "      * Host IPC namespace being shared with: $cname"
+        ipcns_shared_containers="$ipcns_shared_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Host IPC namespace being shared with: $c"
-      ipcns_shared_containers="$ipcns_shared_containers $c"
+      warn "      * Host IPC namespace being shared with: $cname"
+      ipcns_shared_containers="$ipcns_shared_containers $cname"
     fi
   done
   # We went through all the containers and found none with IPCMode as host
@@ -711,19 +726,20 @@ check_5_17() {
   fail=0
   hostdev_exposed_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     devices=$(podman inspect --format 'Devices={{ .HostConfig.Devices }}' "$c")
 
     if [ "$devices" != "Devices=" ] && [ "$devices" != "Devices=[]" ] && [ "$devices" != "Devices=<no value>" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         info -c "$check"
-        info "      * Container has devices exposed directly: $c"
-        hostdev_exposed_containers="$hostdev_exposed_containers $c"
+        info "      * Container has devices exposed directly: $cname"
+        hostdev_exposed_containers="$hostdev_exposed_containers $cname"
         fail=1
         continue
       fi
-      info "      * Container has devices exposed directly: $c"
-      hostdev_exposed_containers="$hostdev_exposed_containers $c"
+      info "      * Container has devices exposed directly: $cname"
+      hostdev_exposed_containers="$hostdev_exposed_containers $cname"
     fi
   done
   # We went through all the containers and found none with devices
@@ -750,19 +766,20 @@ check_5_18() {
   fail=0
   no_ulimit_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     ulimits=$(podman inspect --format 'Ulimits={{ .HostConfig.Ulimits }}' "$c")
 
     if [ "$ulimits" = "Ulimits=" ] || [ "$ulimits" = "Ulimits=[]" ] || [ "$ulimits" = "Ulimits=<no value>" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         info -c "$check"
-        info "      * Container no default ulimit override: $c"
-        no_ulimit_containers="$no_ulimit_containers $c"
+        info "      * Container no default ulimit override: $cname"
+        no_ulimit_containers="$no_ulimit_containers $cname"
         fail=1
         continue
       fi
-      info "      * Container no default ulimit override: $c"
-      no_ulimit_containers="$no_ulimit_containers $c"
+      info "      * Container no default ulimit override: $cname"
+      no_ulimit_containers="$no_ulimit_containers $cname"
     fi
   done
   # We went through all the containers and found none without Ulimits
@@ -789,18 +806,19 @@ check_5_19() {
   fail=0
   mountprop_shared_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     if podman inspect --format 'Propagation={{range $mnt := .Mounts}} {{json $mnt.Propagation}} {{end}}' "$c" | \
      grep shared 2>/dev/null 1>&2; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Mount propagation mode is shared: $c"
-        mountprop_shared_containers="$mountprop_shared_containers $c"
+        warn "      * Mount propagation mode is shared: $cname"
+        mountprop_shared_containers="$mountprop_shared_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Mount propagation mode is shared: $c"
-      mountprop_shared_containers="$mountprop_shared_containers $c"
+      warn "      * Mount propagation mode is shared: $cname"
+      mountprop_shared_containers="$mountprop_shared_containers $cname"
     fi
   done
   # We went through all the containers and found none with shared propagation mode
@@ -827,19 +845,20 @@ check_5_20() {
   fail=0
   utcns_shared_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     mode=$(podman inspect --format 'UTSMode={{.HostConfig.UTSMode }}' "$c")
 
     if [ "$mode" = "UTSMode=host" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Host UTS namespace being shared with: $c"
-        utcns_shared_containers="$utcns_shared_containers $c"
+        warn "      * Host UTS namespace being shared with: $cname"
+        utcns_shared_containers="$utcns_shared_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Host UTS namespace being shared with: $c"
-      utcns_shared_containers="$utcns_shared_containers $c"
+      warn "      * Host UTS namespace being shared with: $cname"
+      utcns_shared_containers="$utcns_shared_containers $cname"
     fi
   done
   # We went through all the containers and found none with UTSMode as host
@@ -866,17 +885,18 @@ check_5_21() {
   fail=0
   seccomp_disabled_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     if podman inspect --format 'SecurityOpt={{.HostConfig.SecurityOpt }}' "$c" | \
       grep -E 'seccomp:unconfined|seccomp=unconfined' 2>/dev/null 1>&2; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Default seccomp profile disabled: $c"
-        seccomp_disabled_containers="$seccomp_disabled_containers $c"
+        warn "      * Default seccomp profile disabled: $cname"
+        seccomp_disabled_containers="$seccomp_disabled_containers $cname"
         fail=1
       else
-        warn "      * Default seccomp profile disabled: $c"
-        seccomp_disabled_containers="$seccomp_disabled_containers $c"
+        warn "      * Default seccomp profile disabled: $cname"
+        seccomp_disabled_containers="$seccomp_disabled_containers $cname"
       fi
     fi
   done
@@ -936,19 +956,20 @@ check_5_24() {
   fail=0
   unexpected_cgroup_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     mode=$(podman inspect --format 'CgroupParent={{.HostConfig.CgroupParent }}x' "$c")
 
     if [ "$mode" != "CgroupParent=x" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Confirm cgroup usage: $c"
-        unexpected_cgroup_containers="$unexpected_cgroup_containers $c"
+        warn "      * Confirm cgroup usage: $cname"
+        unexpected_cgroup_containers="$unexpected_cgroup_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Confirm cgroup usage: $c"
-      unexpected_cgroup_containers="$unexpected_cgroup_containers $c"
+      warn "      * Confirm cgroup usage: $cname"
+      unexpected_cgroup_containers="$unexpected_cgroup_containers $cname"
     fi
   done
   # We went through all the containers and found none with UTSMode as host
@@ -974,17 +995,18 @@ check_5_25() {
   fail=0
   addprivs_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     if ! podman inspect --format 'SecurityOpt={{.HostConfig.SecurityOpt }}' "$c" | grep 'no-new-privileges' 2>/dev/null 1>&2; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Privileges not restricted: $c"
-        addprivs_containers="$addprivs_containers $c"
+        warn "      * Privileges not restricted: $cname"
+        addprivs_containers="$addprivs_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Privileges not restricted: $c"
-      addprivs_containers="$addprivs_containers $c"
+      warn "      * Privileges not restricted: $cname"
+      addprivs_containers="$addprivs_containers $cname"
     fi
   done
   # We went through all the containers and found none with capability to acquire additional privileges
@@ -1011,16 +1033,17 @@ check_5_26() {
   fail=0
   nohealthcheck_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     if ! podman inspect --format '{{ .Id }}: Health={{ .State.Health.Status }}' "$c" 2>/dev/null 1>&2; then
       if [ $fail -eq 0 ]; then
         warn -s "$check"
         warn "      * Health check not set: $c"
-        nohealthcheck_containers="$nohealthcheck_containers $c"
+        nohealthcheck_containers="$nohealthcheck_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Health check not set: $c"
-      nohealthcheck_containers="$nohealthcheck_containers $c"
+      warn "      * Health check not set: $cname"
+      nohealthcheck_containers="$nohealthcheck_containers $cname"
     fi
   done
   if [ $fail -eq 0 ]; then
@@ -1084,19 +1107,20 @@ check_5_28() {
   fail=0
   nopids_limit_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     pidslimit="$(podman inspect --format '{{.HostConfig.PidsLimit }}' "$c")"
 
     if [ "$pidslimit" = "0" ] || [  "$pidslimit" = "<nil>" ] || [  "$pidslimit" = "-1" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * PIDs limit not set: $c"
-        nopids_limit_containers="$nopids_limit_containers $c"
+        warn "      * PIDs limit not set: $cname"
+        nopids_limit_containers="$nopids_limit_containers $cname"
         fail=1
         continue
       fi
-      warn "      * PIDs limit not set: $c"
-      nopids_limit_containers="$nopids_limit_containers $c"
+      warn "      * PIDs limit not set: $cname"
+      nopids_limit_containers="$nopids_limit_containers $cname"
     fi
   done
   # We went through all the containers and found all with PIDs limit
@@ -1124,6 +1148,7 @@ check_5_29() {
   podman_network_containers=""
   networks=$(podman network ls -q 2>/dev/null)
   for net in $networks; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     if podman network inspect --format '{{ .Options }}' "$net" 2>/dev/null | grep "com.podman.network.bridge.name:podman0" >/dev/null 2>&1; then
       podman0Containers=$(podman network inspect --format='{{ range $k, $v := .Containers }} {{ $k }} {{ end }}' "$net" | \
         sed -e 's/^ //' -e 's/  /\n/g' 2>/dev/null)
@@ -1172,17 +1197,18 @@ check_5_30() {
   fail=0
   hostns_shared_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     if podman inspect --format '{{ .HostConfig.UsernsMode }}' "$c" 2>/dev/null | grep -i 'host' >/dev/null 2>&1; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Namespace shared: $c"
-        hostns_shared_containers="$hostns_shared_containers $c"
+        warn "      * Namespace shared: $cname"
+        hostns_shared_containers="$hostns_shared_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Namespace shared: $c"
-      hostns_shared_containers="$hostns_shared_containers $c"
+      warn "      * Namespace shared: $cname"
+      hostns_shared_containers="$hostns_shared_containers $cname"
     fi
   done
   # We went through all the containers and found none with host's user namespace shared
@@ -1209,17 +1235,18 @@ check_5_31() {
   fail=0
   podman_sock_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     if podman inspect --format '{{ .Mounts }}' "$c" 2>/dev/null | grep 'podman.sock' >/dev/null 2>&1; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "      * Podman socket shared: $c"
-        podman_sock_containers="$podman_sock_containers $c"
+        warn "      * Podman socket shared: $cname"
+        podman_sock_containers="$podman_sock_containers $cname"
         fail=1
         continue
       fi
-      warn "      * Podman socket shared: $c"
-      podman_sock_containers="$podman_sock_containers $c"
+      warn "      * Podman socket shared: $cname"
+      podman_sock_containers="$podman_sock_containers $cname"
     fi
   done
   # We went through all the containers and found none with podman.sock shared

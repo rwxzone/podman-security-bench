@@ -31,19 +31,20 @@ check_4_1() {
   '
   root_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     user=$(podman inspect --format 'User={{.Config.User}}' "$c")
 
     if [ "$user" = "User=0" ] || [ "$user" = "User=root" ] || [ "$user" = "User=" ] || [ "$user" = "User=[]" ] || [ "$user" = "User=<no value>" ]; then
       # If it's the first container, fail the test
       if [ $fail -eq 0 ]; then
         warn -s "$check"
-        warn "     * Running as root: $c"
-        root_containers="$root_containers $c"
+        warn "     * Running as root: $cname"
+        root_containers="$root_containers $cname"
         fail=1
         continue
       fi
-      warn "     * Running as root: $c"
-      root_containers="$root_containers $c"
+      warn "     * Running as root: $cname"
+      root_containers="$root_containers $cname"
     fi
   done
   # We went through all the containers and found none running as root
@@ -87,6 +88,7 @@ check_4_3() {
   id_containers=""
   mapfile -t allowedPatterns < "${allowed_file}"
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     listCommand=$(get_list_cmd "$(podman exec "$c" grep ^ID= /etc/os-release | cut -f2 -d=)")
     # listCommand must not be quoted
     # shellcheck disable=SC2086
@@ -105,8 +107,8 @@ check_4_3() {
           fail=1
           info -c "$check"
         fi
-        warn "      * Not allowed package found: $c"
-        id_containers="$id_containers $c/$package"
+        warn "      * Not allowed package found: $cname"
+        id_containers="$id_containers $cname/$package"
       fi
     done
   done
@@ -213,6 +215,7 @@ check_4_8() {
   fail=0
   id_containers=""
   for c in $containers; do
+    cname=$(podman inspect --format='{{.Name}}' "$c")
     mapfile -t containerFiles < <(podman export "$c" | tar -tv 2>/dev/null | awk '/^[-rwx]+[sS]/ {print $6}')
     for file in "${containerFiles[@]}"; do
       not_allowed_found="0"
@@ -224,8 +227,8 @@ check_4_8() {
           fail=1
           info -c "$check"
         fi
-        warn "      * Not allowed file found: $c"
-        id_containers="$id_containers $c/$not_allowed_found"
+        warn "      * Not allowed file found: $cname"
+        id_containers="$id_containers $cname/$not_allowed_found"
       fi
     done
   done
