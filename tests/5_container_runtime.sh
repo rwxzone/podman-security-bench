@@ -1074,13 +1074,13 @@ check_5_27() {
       if [ $fail -eq 0 ]; then
         fail=1
         warn -s "$check"
-        warn "     * Newer image found: $img"
-        newer_images="$newer_images $img"
+        warn "     * Newer image found: $imgTag"
+        newer_images="$newer_images $imgTag"
         continue
       fi
 
-      warn "     * Newer image found: $img"
-      newer_images="$newer_images $img"
+      warn "     * Newer image found: $imgTag"
+      newer_images="$newer_images $imgTag"
     fi
   done
   if [ $fail -eq 0 ]; then
