@@ -1061,12 +1061,13 @@ check_5_27() {
   local remediationImpact="None."
   local check="$id - $desc"
   starttestjson "$id" "$desc"
-
+`
   fail=0
   newer_images=""
   for img in $images; do
     imgFullName=$(podman inspect "$img" --format '{{ index .RepoTags 0 }}' | tr -d '[]')
     imgTag=$(echo "${imgFullName}" | cut -f 2 -d ':')
+    imgName=$(echo "${imgFullName}" | cut -f 1 -d ':')
     imgUrl="docker://$(echo "${imgFullName}" | cut -f 1 -d ':')"
     latestTag=$(skopeo list-tags "${imgUrl}" | jq -r '[.Tags[] | select(. != "latest")] | max')
 
@@ -1074,13 +1075,13 @@ check_5_27() {
       if [ $fail -eq 0 ]; then
         fail=1
         warn -s "$check"
-        warn "     * Newer image found: $imgTag"
+        warn "     * Newer image found: $imgTag / $imgName"
         newer_images="$newer_images $imgTag"
         continue
       fi
 
-      warn "     * Newer image found: $imgTag"
-      newer_images="$newer_images $imgTag"
+      warn "     * Newer image found: $imgTag / $imgName"
+      newer_images="$newer_images $imgTag / $imgName"
     fi
   done
   if [ $fail -eq 0 ]; then
@@ -1089,7 +1090,7 @@ check_5_27() {
     return
   fi
 
-  logcheckresult "INFO"
+  logcheckresult "INFO" "Not latest images" "$newer_images"
 }
 
 check_5_28() {
