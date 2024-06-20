@@ -227,7 +227,7 @@ check_4_8() {
           fail=1
           info -c "$check"
         fi
-        warn "      * Not allowed file found: $cname"
+        warn "      * Not allowed file found: $cname/$not_allowed_found"
         id_containers="$id_containers $cname/$not_allowed_found"
       fi
     done
