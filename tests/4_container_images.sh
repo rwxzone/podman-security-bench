@@ -107,7 +107,7 @@ check_4_3() {
           fail=1
           info -c "$check"
         fi
-        warn "      * Not allowed package found: $cname"
+        warn "      * Not allowed package found: $cname/$package"
         id_containers="$id_containers $cname/$package"
       fi
     done
