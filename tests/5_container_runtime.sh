@@ -1090,7 +1090,7 @@ check_5_27() {
     return
   fi
 
-  logcheckresult "INFO" "Not latest images" "$newer_images"
+  logcheckresult "INFO" "Newer image found" "$newer_images"
 }
 
 check_5_28() {
