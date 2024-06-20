@@ -164,7 +164,8 @@ logcheckresult() {
   log_to_json "$@"
 
   # Log remediation measure to JSON
-  if [ -n "$remediation" ] && [ "$1" != "PASS" ] && [ "$printremediation" = "1" ]; then
+  # if [ -n "$remediation" ] && [ "$1" != "PASS" ] && [ "$printremediation" = "1" ]; then
+  if [ -n "$remediation" ] && [ "$printremediation" = "1" ]; then
     printf ",\n          \"remediation\": \"%s\"" "$remediation" | tee -a "$logger.json" 2>/dev/null 1>&2
     if [ -n "$remediationImpact" ]; then
       printf ",\n          \"remediation-impact\": \"%s\"" "$remediationImpact" | tee -a "$logger.json" 2>/dev/null 1>&2
@@ -173,7 +174,8 @@ logcheckresult() {
   printf "\n        }" | tee -a "$logger.json" 2>/dev/null 1>&2
 
   # Save remediation measure for print log to stdout
-  if [ -n "$remediation" ] && [ "$1" != "PASS" ]; then
+  # if [ -n "$remediation" ] && [ "$1" != "PASS" ]; then
+  if [ -n "$remediation" ]; then
     if [ -n "${checkHeader}" ]; then
       if [ -n "${addSpaceHeader}" ]; then
         globalRemediation="${globalRemediation}\n"

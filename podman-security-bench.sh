@@ -78,7 +78,7 @@ fi
 logger="log/${myname}.log"
 limit=0
 printremediation="1"
-globalRemediation=""
+globalRemediation="1"
 
 # Get the flags
 # If you add an option here, please
