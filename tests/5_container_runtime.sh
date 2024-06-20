@@ -1061,7 +1061,7 @@ check_5_27() {
   local remediationImpact="None."
   local check="$id - $desc"
   starttestjson "$id" "$desc"
-`
+
   fail=0
   newer_images=""
   for img in $images; do
